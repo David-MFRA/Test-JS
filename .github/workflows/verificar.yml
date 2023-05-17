@@ -11,28 +11,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Realiza la clonación del repositorio en el entorno de ejecución del flujo de trabajo.
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
-
+      
+      # Configura la versión de Node.js para usar en el flujo de trabajo.
       - name: Check commit message format
         uses: actions/setup-node@v2
         with:
           node-version: '14'
-
+          
+      # Este paso utiliza la acción "actions/github-script" para ejecutar el código JavaScript dentro del flujo de trabajo.
       - name: Run JavaScript action
         uses: actions/github-script@v4
         with:
           script: |
+            // Importa la función execSync del módulo child_process para ejecutar comandos de Bash
             const { execSync } = require('child_process');
 
             try {
+              // Obtiene el último mensaje de commit del HEAD y lo almacena en la variable `commitMessage`
               const commitMessage = execSync('git log --format=%B -n 1 HEAD').toString().trim();
               console.log(`Commit message: ${commitMessage}`);
 
+              // Define un formato válido de mensaje de commit en la variable `commitFormat`
               const commitFormat = '#Esto es un ejemplo';
+
+              // Normaliza el mensaje de commit y el formato, eliminando caracteres diacríticos y convirtiendo a minúsculas
               const normalizedCommitMessage = commitMessage
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
@@ -45,11 +53,14 @@ jobs:
               console.log(normalizedCommitMessage);
               console.log(normalizedCommitFormat);
 
+              // Verifica si el mensaje de commit coincide con el formato establecido
               if (!normalizedCommitMessage.match(normalizedCommitFormat)) {
+                // Muestra un mensaje de error si el formato del mensaje de commit es incorrecto
                 console.error('error: invalid commit message format');
                 process.exit(1);
               }
             } catch (error) {
+              // Captura cualquier error que ocurra durante la ejecución del script
               console.error(`Error executing script: ${error.message}`);
               process.exit(1);
             }

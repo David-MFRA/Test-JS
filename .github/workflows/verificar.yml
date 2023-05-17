@@ -18,36 +18,38 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Check commit message format
-        run: |
-          const { execSync } = require('child_process');
-          
-          // Obtiene el último mensaje de commit del HEAD y lo almacena en la variable `commit_message`.
-          const commitMessage = execSync('git log --format=%B -n 1 HEAD').toString().trim();
-          
-          console.log(`Commit message: ${commitMessage}`);
-          
-          // Define un formato válido de mensaje de commit en la variable `commit_format`.
-          const commitFormat = '#Esto es un ejemplo';
-          
-          // Elimina los caracteres diacríticos del mensaje de commit y el formato
-          // Además, pasa de mayúsculas a minúsculas. Esto permitirá comparaciones más flexibles.
-          const normalizedCommitMessage = commitMessage
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase();
-          const normalizedCommitFormat = commitFormat
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase();
-          
-          console.log(normalizedCommitMessage);
-          console.log(normalizedCommitFormat);
-          
-          // Verifica si el mensaje de commit coincide con el formato establecido.
-          if (!normalizedCommitMessage.match(normalizedCommitFormat)) {
-            // Muestra un mensaje de error si el formato del mensaje de commit es incorrecto.
-            console.error('error: invalid commit message format');
-            
-            // Finaliza la ejecución del flujo de trabajo con un código de salida 1.
-            process.exit(1);
-          }
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Run JavaScript action
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const { execSync } = require('child_process');
+
+            try {
+              const commitMessage = execSync('git log --format=%B -n 1 HEAD').toString().trim();
+              console.log(`Commit message: ${commitMessage}`);
+
+              const commitFormat = '#Esto es un ejemplo';
+              const normalizedCommitMessage = commitMessage
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+              const normalizedCommitFormat = commitFormat
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+
+              console.log(normalizedCommitMessage);
+              console.log(normalizedCommitFormat);
+
+              if (!normalizedCommitMessage.match(normalizedCommitFormat)) {
+                console.error('error: invalid commit message format');
+                process.exit(1);
+              }
+            } catch (error) {
+              console.error(`Error executing script: ${error.message}`);
+              process.exit(1);
+            }
